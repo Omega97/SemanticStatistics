@@ -1,0 +1,120 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OS / Editor junk
+# ─────────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.Spotlight-V100
+.Trashes
+*.swp
+*.swo
+
+# IDE settings
+.vscode/
+.idea/
+*.code-workspace
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Virtual environments
+.venv/
+venv/
+env/.env
+
+# Notebooks
+.ipynb_checkpoints/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker / Compose
+# ─────────────────────────────────────────────────────────────────────────────
+# Local overrides & environment files
+docker-compose.override.yml
+docker-compose.local.yml
+compose/*.override.yml
+compose/*.local.yml
+
+# Local bind-mount directories & runtime artifacts
+docker-data/
+tmp/
+*.pid
+
+# Logs
+logs/
+*.log
+
+# Backups / dumps
+backup/
+backup/**
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Secrets / Certificates / Keys (store examples only)
+# ─────────────────────────────────────────────────────────────────────────────
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.der
+*.csr
+.envrc
+
+# If you keep example certs or templates, explicitly un-ignore them:
+# !env/certs/example.crt
+# !env/certs/README.md
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reports (LaTeX) & Slides build artefacts
+# ─────────────────────────────────────────────────────────────────────────────
+# LaTeX aux files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.synctex.gz
+*.run.xml
+*.bcf
+
+# Common build folders
+report/build/
+report/_build/
+slides/build/
+slides/_build/
+
+# Keep final PDFs if you export them
+# (uncomment next two lines if you want to commit final PDFs)
+# !report/*.pdf
+# !slides/*.pdf
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data (optional: ignore heavy local data; keep a placeholder)
+# ─────────────────────────────────────────────────────────────────────────────
+data/
+!data/.gitkeep
+
+# Figures generated at runtime (optional)
+# figures/
+# !figures/.gitkeep
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Node / Frontend (only if you add a small UI or docs site)
+# ─────────────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.cache/
