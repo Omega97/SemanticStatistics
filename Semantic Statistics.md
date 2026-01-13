@@ -4,7 +4,7 @@
 
 ### Abstract
 
-> This novel framework that I call **Se**mantic **Sta**tistics (SeSta) applies principles from statistical mechanics (SM) to understand why large language models (LLMs) fall into repetitive generation patterns, such as endlessly repeating tokens (also called *stuttering*). Rather than analyzing models through a specific input, this approach treats neural activations as positions in a thermodynamic phase space with a custom energy function. By calculating fundamental thermodynamic quantities like entropy, temperature, and heat capacity across a model's activation manifold, this framework aims to uncover the intrinsic properties that lead to repetition without input dependency. Initial applications include diagnosing architectural vulnerabilities to repetition loops, identifying critical temperature thresholds where phase transitions between creative and repetitive behavior occur, and potentially guiding sampling strategies that avoid these failure modes. This approach provides concrete metrics for model evaluation and improvement that can help with efficient hyperparameter tuning.
+> This novel framework that I call **Se**mantic **Sta**tistics (SeSta) applies principles from statistical mechanics (SM) to understand why large language models (LLMs) fall into repetitive generation patterns, such as endlessly repeating tokens (also called *stuttering*). Rather than analyzing models through a specific input, this approach treats neural activations as positions in a thermodynamic phase space with a custom energy function. By calculating fundamental thermodynamic quantities like entropy, temperature, and specific heat across a model's activation manifold, this framework aims to uncover the intrinsic properties that lead to repetition without input dependency. Initial applications include diagnosing architectural vulnerabilities to repetition loops, identifying critical temperature thresholds where phase transitions between creative and repetitive behavior occur, and potentially guiding sampling strategies that avoid these failure modes. This approach provides concrete metrics for model evaluation and improvement that can help with efficient hyperparameter tuning.
 
 ---
 
@@ -35,7 +35,7 @@ By following this recipe (standard in SM), we can evaluate the thermodynamical p
 - **Entropy**  $S(E) = \ln \Omega(E)$
 - Inverse temperature $\beta=\frac{\partial S}{\partial E}$
 - **Temperature**  $T(E) = \frac{1}{\beta(T)}$
-- **Heat capacity**: $C(E) = \frac{\partial E}{\partial T}$
+- **Specific heat**: $C(E) = \frac{\partial E}{\partial T}$
 - **Free Energy** $F(E) = E - T(E)\,S(E)$
 
 This framework returns **thermodynamic functions of the energy**, while energy itself is nor fixed. The TD quantities themselves are not dependent on any individual input, rather on the model and training dataset. 

@@ -45,8 +45,9 @@ When the program runs, it generates a four-quadrant diagnostic plot:
 
 * [x] **Phase 1:** Implement FFNN on binary classification.
 * [x] **Phase 2:** Ensure determinism and importance sampling via KDE.
-* [ ] **Phase 3:** Verify robustness and scalability.
-* [ ] **Phase 4:** Test on GPT-2.
+* [x] **Phase 3:** Verify robustness (Course-graining, Gaussian blur).
+* [ ] **Phase 4:** Verify scalability.
+* [ ] **Phase 5:** Test on GPT-2.
 
 ---
 
