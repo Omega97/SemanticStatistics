@@ -33,7 +33,7 @@ def generate_dataset(input_dim=6):
     return X, y
 
 
-def uniform_derivative(y, x, window_size=5, poly_order=2):
+def uniform_derivative(y, x, window_size=5, poly_order=1):
     """
     Robust derivative
     window_size: Must be odd. Larger = smoother but may blunt peaks.
@@ -46,6 +46,7 @@ def uniform_derivative(y, x, window_size=5, poly_order=2):
 
 
 def general_derivative(y, x):
+    """Method for calculating the derivative in the general case."""
     out = []
     for i in range(len(x)):
         j1 = max(i-1, 0)
@@ -57,3 +58,7 @@ def general_derivative(y, x):
         else:
             out.append(dy / dx)
     return np.array(out)
+
+
+def clip_to_nan(arr, a_min, a_max):
+    return np.where((arr >= a_min) & (arr <= a_max), arr, np.nan)

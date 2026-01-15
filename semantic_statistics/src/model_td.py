@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from scipy.ndimage import gaussian_filter1d
 from semantic_statistics.src.misc import uniform_derivative, general_derivative
+# todo test with omega(x)=x, S(x)=log(x), beta(x)=1/x, T(x)=x, C(x)=1
 
 
 class ModelTD:
@@ -21,11 +22,14 @@ class ModelTD:
         self.gaussian_blur = gaussian_blur
 
         self.energy = None
+        self.rho_q = None  # sample density
         self.omega = None
         self.entropy = None
         self.inv_temperature = None
         self.temperature = None
         self.specific_heat = None
+        self.free_energy = None
+        self.isothermal_compressibility = None
 
         # Compute the TD quantities
         self._sample_energies()
@@ -35,6 +39,8 @@ class ModelTD:
         self._evaluate_inv_temperature()
         self._evaluate_temperature()
         self._evaluate_specific_heat()
+        self._evaluate_free_energy()
+        self._evaluate_compressibility()
 
     @staticmethod
     def hamiltonian(p_correct):
@@ -57,13 +63,14 @@ class ModelTD:
         self.sampled_q = q_raw[idx]
 
     def _set_energy(self):
-        # Define the energy axis for our functions
+        """Define the energy axis for our functions"""
         e_min = self.sampled_energies.min()
         e_max = self.sampled_energies.max()
         self.energy = np.linspace(e_min, e_max, self.n_bins)
 
-    def _evaluate_omega(self):
-        """ Compute max-normalized omega
+    def _evaluate_omega(self, threshold=1e-9):
+        r"""
+        Max-normalized $\Omega$
         Compute the volume of the phase space where H(q)<E.
         """
         # 1. Estimate rho(q) using KDE.
@@ -72,11 +79,11 @@ class ModelTD:
         # Transpose q to shape (features, samples) for scipy KDE
         normalized_q = self.sampled_q.T / np.std(self.sampled_q)
         kde = gaussian_kde(normalized_q)
-        rho = kde.evaluate(normalized_q)
+        self.rho_q = kde.evaluate(normalized_q)
 
         # 2. Omega(E) = Sum [ 1(H < E) / rho(q) ]
         omega_values = []
-        weights = 1.0 / (rho + 1e-9)
+        weights = 1.0 / (self.rho_q + threshold)
         for e in self.energy:
             mask = self.sampled_energies <= e
             vol_estimate = np.sum(weights[mask])
@@ -90,29 +97,86 @@ class ModelTD:
 
         # 4. Max-normalize omega + Clip to avoid log(0)
         self.omega /= np.max(self.omega)
-        self.omega = np.clip(self.omega, 1e-9, None)
+        self.omega = np.clip(self.omega, threshold, None)
 
     def _evaluate_entropy(self):
-        """S = log Omega"""
+        """
+        Entropy
+        S = log Omega
+        """
+        assert min(self.omega) > 0, r'Volume $\Omega$ must be positive!'
         self.entropy = np.log(self.omega)
+
+        # Apply gaussian filter to entropy
+        if self.gaussian_blur > 0:
+            self.entropy = gaussian_filter1d(self.entropy, sigma=self.gaussian_blur)
 
     def _evaluate_inv_temperature(self):
         """Beta = dS/dE"""
         self.inv_temperature = uniform_derivative(self.entropy, self.energy)
 
-    def _evaluate_temperature(self):
-        """T = 1/beta"""
+        # Apply gaussian filter to inv_temperature
+        if self.gaussian_blur > 0:
+            self.inv_temperature = gaussian_filter1d(self.inv_temperature, sigma=self.gaussian_blur)
+
+    def _evaluate_temperature(self, threshold=1e-9):
+        """
+        Temperature
+        T = 1/beta
+        """
         # Avoid division by zero in T
-        self.temperature = 1.0 / (self.inv_temperature + 1e-9)
+        self.temperature = np.divide(
+            1.0,
+            self.inv_temperature,
+            out=np.zeros_like(self.inv_temperature),
+            where=self.inv_temperature > threshold
+        )
+
+        # Apply gaussian filter to temperature
+        if self.gaussian_blur > 0:
+            self.temperature = gaussian_filter1d(self.temperature, sigma=self.gaussian_blur, mode='nearest')
 
     def _evaluate_specific_heat(self):
-        """C = dE/dT"""
+        """
+        Specific heat at constant volume.
+        C_V = dE/dT
+        """
+        #todo make more robust
         self.specific_heat = general_derivative(self.energy, self.temperature)
+
+    def _evaluate_free_energy(self):
+        """
+        Free energy
+        F(E) = E - T(E) S(E)
+        """
+        self.free_energy = self.energy - self.temperature * self.entropy
+
+    def _evaluate_compressibility(self):
+        r"""
+        Isothermal compressibility
+        $\kappa=(d/dE)^2 S(E)$
+        """
+        der = uniform_derivative(self.entropy, self.energy)
+        self.isothermal_compressibility = uniform_derivative(der, self.energy)
+
+    def _evaluate_average_td_energy(self, threshold=1e-9, pow=1):
+        r"""
+        Thermodynamic Average (Importance Sampled)
+        <H> = \frac{\int dE E \Omega E}{\int dE \Omega E}
+        Change pow to evaluate average $E^pow$.
+        """
+        weights = 1.0 / (self.rho_q + threshold)
+        if pow == 1:
+            return np.sum(self.sampled_energies * weights) / np.sum(weights)
+        else:
+            return np.sum(self.sampled_energies ** pow * weights) / np.sum(weights)
 
     # Getters
     def get_E(self): return self.energy
     def get_sampled_energies(self): return self.sampled_energies
-    def get_S(self): return self.entropy, self.energy
-    def get_beta(self): return self.inv_temperature, self.energy
-    def get_T(self): return self.temperature, self.energy
+    def get_S(self): return self.entropy, self.get_E()
+    def get_beta(self): return self.inv_temperature, self.get_E()
+    def get_T(self): return self.temperature, self.get_E()
     def get_C(self): return self.specific_heat, self.temperature
+    def get_F(self): return self.free_energy, self.get_E()
+    def get_kapa(self): return self.isothermal_compressibility, self.get_E()

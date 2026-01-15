@@ -1,8 +1,7 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from semantic_statistics.src.misc import set_seed, generate_dataset
+from semantic_statistics.src.misc import set_seed, generate_dataset, clip_to_nan
 from semantic_statistics.src.model_td import ModelTD
 
 
@@ -40,9 +39,9 @@ class ToyModel(nn.Module):
                 print(f"Epoch {i + 1}: Loss = {loss.item():.4f}, Acc = {acc:.4f}")
 
 
-def main(input_dim=11, hidden_dim=30, gaussian_blur=0.1,
-         n_bins=25,
-         epochs=600, lr=0.1):
+def main(input_dim=10, hidden_dim=40, gaussian_blur=.5,
+         n_bins=50,
+         epochs=1000, lr=0.1):
     set_seed(42)
 
     # 1. Generate Random Inputs (Binary)
@@ -56,24 +55,31 @@ def main(input_dim=11, hidden_dim=30, gaussian_blur=0.1,
     # 3. Thermodynamics
     system = ModelTD(X, y, model, n_bins=n_bins, gaussian_blur=gaussian_blur)
     S, E = system.get_S()
-    beta, E = system.get_beta()
-    T, E = system.get_T()
     C, T = system.get_C()
+    F, E = system.get_F()
+    kapa, E = system.get_kapa()
+
+    # Contain
+    T = clip_to_nan(T, 0, 3)
+    C = clip_to_nan(C, -3, 3)
+    F = clip_to_nan(F, 0, 5)
 
     # 4. Plots
-    fig, ax = plt.subplots(2, 2, figsize=(8, 6))
+    fig, ax = plt.subplots(2, 3, figsize=(8, 6))
     plt.suptitle('Thermodynamic quantities for the NN')
 
     # Energy Distribution (histogram)
-    ax[0, 0].hist(system.get_sampled_energies(), bins=n_bins, color='purple', alpha=0.7, edgecolor='black')
-    ax[0, 0].set_title("Sampled Energy Distribution")
-    ax[0, 0].set_xlabel("Energy ($p_{correct}$)")
-    ax[0, 0].set_ylabel("Frequency")
+    a = ax[0, 0]
+    a.hist(system.get_sampled_energies(), bins=n_bins, color='purple', alpha=0.7, edgecolor='black')
+    a.set_title("Sampled Energy Distribution")
+    a.set_xlabel("Energy ($p_{correct}$)")
+    a.set_ylabel("Frequency")
 
     # Entropy plot
-    ax[0, 1].plot(E, S, color='green', lw=2)
-    ax[0, 1].set_title(r"Entropy $S(E)$")
-    ax[0, 1].set_xlabel("Energy")
+    a = ax[0, 1]
+    a.plot(E, S, color='green', lw=2)
+    a.set_title(r"Entropy $S(E)$")
+    a.set_xlabel("Energy")
 
     # Beta plot
     # ax[1, 0].plot(E, beta, color='orange', lw=2)
@@ -81,15 +87,30 @@ def main(input_dim=11, hidden_dim=30, gaussian_blur=0.1,
     # ax[1, 0].set_xlabel("Energy")
 
     # Temperature
-    ax[1, 0].plot(E, T, color='orange', lw=2)
-    ax[1, 0].set_title(r"Temperature $T(E)$")
-    ax[1, 0].set_xlabel("Energy")
+    a = ax[0, 2]
+    a.plot(E, T, color='orange', lw=2)
+    a.set_title(r"Temperature $T(E)$")
+    a.set_xlabel("Energy")
+    a.set_ylim(0, None)
 
     # Specific heat scatter (plot)
-    idx = np.argsort(T)
-    ax[1, 1].plot(T[idx], C[idx], color='red', lw=2)
-    ax[1, 1].set_title("Specific Heat $C(T)$")
-    ax[1, 1].set_xlabel("Temperature")
+    a = ax[1, 0]
+    # idx = np.argsort(T)
+    a.scatter(T, C, color='red', lw=2)
+    a.set_title("Specific Heat $C(T)$")
+    a.set_xlabel("Temperature")
+
+    # Free energy
+    a = ax[1, 1]
+    a.plot(E, F, color='blue', lw=2)
+    a.set_title(r"Free Energy $F(E)$")
+    a.set_xlabel("Energy")
+
+    # Isothermal compressibility
+    a = ax[1, 2]
+    a.plot(E, kapa, color='purple', lw=2)
+    a.set_title(r"Isoth. Compressibility $\kappa(E)$")
+    a.set_xlabel("Energy")
 
     plt.tight_layout()
     plt.show()
